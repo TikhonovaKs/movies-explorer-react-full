@@ -6,17 +6,23 @@ import SearchForm from '../SearchForm/SearchForm';
 import MoviesCardList from '../MoviesCardList/MoviesCardList.js';
 import ShortMoviesContext from '../../contexts/ShortMoviesContext';
 
-function Movies({ allMoviesFromPublicApi, path }) {
+function Movies({ allMoviesFromPublicApi, path, useCache }) {
   const isShortMovie = (areShortSelected, movie) => {
-    if (!areShortSelected)
-      return true;
+    if (!areShortSelected) return true;
     return movie.duration < 40;
   };
-  const [areShortMovies, setAreShortMovies] = React.useState(localStorage.getItem('isShortMoviesActive') === "true" ?? false);
+  const [areShortMovies, setAreShortMovies] = React.useState(
+    (localStorage.getItem('isShortMoviesActive') === 'true' && useCache) ?? false
+  );
 
-  const initValueOfMoviesList = JSON.parse(localStorage.getItem('latestFilteredMovies'))?? []; // ?? - проверяем на null
+  const initValueOfMoviesList = useCache
+    ? JSON.parse(localStorage.getItem('latestFilteredMovies')) ?? [] // ?? - проверяем на null
+    : [];
+
   const [originMovies, setOriginMovies] = React.useState(initValueOfMoviesList);
-  const [moviesList, setMoviesList] = React.useState(initValueOfMoviesList.filter(p=>isShortMovie(areShortMovies, p)));
+  const [moviesList, setMoviesList] = React.useState(
+    initValueOfMoviesList.filter((p) => isShortMovie(areShortMovies, p))
+  );
   const [savedOriginMovies, setSavedOriginMovies] = React.useState([]);
   const [savedMoviesList, setSavedMoviesList] = React.useState([]);
   //состояние загрузки фильмов
@@ -49,7 +55,7 @@ function Movies({ allMoviesFromPublicApi, path }) {
         });
         //обновляем состояние в сохраненном списке (страница "Сохраненные фильмы")
         setSavedOriginMovies(data.movie.map((p) => p)); //??
-        setSavedMoviesList(data.movie.filter(p=>isShortMovie(areShortMovies, p)));
+        setSavedMoviesList(data.movie.filter((p) => isShortMovie(areShortMovies, p)));
         //setIsLoading(false);
       })
       .catch((err) => {
@@ -57,12 +63,11 @@ function Movies({ allMoviesFromPublicApi, path }) {
       });
   }, []);
 
-
   const handleSearch = (keyword, setError) => {
     setSearchKeyword(keyword);
     if (path === '/movies') {
       const resultMovies = allMoviesFromPublicApi.filter((movie) =>
-        movie.nameRU.toLowerCase().includes(keyword.toLowerCase())       
+        movie.nameRU.toLowerCase().includes(keyword.toLowerCase())
       );
       // Обновление состояния для найденных фильмов
       resultMovies.forEach((item) => {
@@ -74,13 +79,15 @@ function Movies({ allMoviesFromPublicApi, path }) {
           }
         }
       });
-      setMoviesList(resultMovies.filter(movie=> isShortMovie(areShortMovies, movie)));
+      setMoviesList(resultMovies.filter((movie) => isShortMovie(areShortMovies, movie)));
 
       // Сохранить полученные фильмы в локал хранилище (только для поисковых фильмов)
-      localStorage.setItem('latestFilteredMovies', JSON.stringify(resultMovies));
+      if (useCache) localStorage.setItem('latestFilteredMovies', JSON.stringify(resultMovies));
     } else {
       const resultMovies = keyword
-        ? savedMoviesList.filter((movie) => isShortMovie(areShortMovies,movie)&& movie.nameRU.toLowerCase().includes(keyword.toLowerCase()))
+        ? savedMoviesList.filter(
+            (movie) => isShortMovie(areShortMovies, movie) && movie.nameRU.toLowerCase().includes(keyword.toLowerCase())
+          )
         : originMovies;
       setSavedMoviesList(resultMovies);
     }
@@ -182,7 +189,7 @@ function Movies({ allMoviesFromPublicApi, path }) {
   return (
     <div className="movies">
       <ShortMoviesContext.Provider value={areShortMovies}>
-        <SearchForm handleSearch={handleSearch} handleShortMovies={handleShortMovies} />
+        <SearchForm handleSearch={handleSearch} handleShortMovies={handleShortMovies} useCache={useCache} />
         <MoviesCardList
           moviesList={moviesList}
           path={path}
