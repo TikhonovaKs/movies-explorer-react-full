@@ -54,12 +54,13 @@ function EditProfile({ onUpdateUser }) {
               },
               validate: {
                 validateDuplicateValues: (_, values) => {
-                  return values.name !== currentUser.name;
+                  return values.name !== currentUser.name || values.email !== currentUser.email;
                 },
               },
             })}
             type="text"
             className="authentication__input"
+            defaultValue={currentUser.name}
           />
           {errors?.name && <div className="authentication__error">{errors.name.message}</div>}
         </div>
@@ -87,12 +88,13 @@ function EditProfile({ onUpdateUser }) {
               },
               validate: {
                 validateDuplicateValues: (_, values) => {
-                  return values.email !== currentUser.email;
+                  return values.email !== currentUser.email || values.name !== currentUser.name;
                 },
               },
             })}
             type="text"
             className="authentication__input"
+            defaultValue={currentUser.email}
           />
           {errors?.email && <div className="authentication__error">{errors.email.message}</div>}
         </div>
